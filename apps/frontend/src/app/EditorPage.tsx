@@ -46,6 +46,7 @@ import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import { yCollab } from 'y-codemirror.next';
 import { CollabProvider } from '../collab/provider';
+import { EMPTY_LLM_SETTINGS, SETTINGS_KEY, normalizeLLMSettings } from './llmSettings';
 
 GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -80,6 +81,7 @@ type AppSettings = {
   llmEndpoint: string;
   llmApiKey: string;
   llmModel: string;
+  llmConfigured: boolean;
   searchEndpoint: string;
   searchApiKey: string;
   searchModel: string;
@@ -107,11 +109,8 @@ const RIGHT_VIEW_OPTIONS = (t: (key: string) => string) => [
   { value: 'review', label: t('评审报告') }
 ];
 
-const SETTINGS_KEY = 'openprism-settings-v1';
 const DEFAULT_SETTINGS: AppSettings = {
-  llmEndpoint: 'https://api.openai.com/v1/chat/completions',
-  llmApiKey: '',
-  llmModel: 'gpt-4o-mini',
+  ...EMPTY_LLM_SETTINGS,
   searchEndpoint: '',
   searchApiKey: '',
   searchModel: '',
@@ -130,6 +129,7 @@ function loadSettings(): AppSettings {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
+    const llm = normalizeLLMSettings(parsed);
     const engine = parsed.compileEngine;
     const VALID_ENGINES: CompileEngine[] = ['pdflatex', 'xelatex', 'lualatex', 'latexmk', 'tectonic'];
     const compileEngine: CompileEngine =
@@ -139,6 +139,7 @@ function loadSettings(): AppSettings {
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      ...llm,
       compileEngine
     };
   } catch {
@@ -149,7 +150,7 @@ function loadSettings(): AppSettings {
 function persistSettings(settings: AppSettings) {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, ...normalizeLLMSettings(settings) }));
   } catch {
     // ignore
   }
@@ -2711,7 +2712,7 @@ export default function EditorPage() {
     const target = selectedPath || activePath;
     if (!target) return;
 
-    const confirmMessage = t('确定要删除 "{name}" 吗？此操作不可恢复。', { name: target.split('/').pop() || target });
+    const confirmMessage = t('确定要删除 "{{name}}" 吗？此操作不可恢复。', { name: target.split('/').pop() || target });
     if (!window.confirm(confirmMessage)) return;
 
     try {

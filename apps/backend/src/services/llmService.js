@@ -23,6 +23,20 @@ export function resolveLLMConfig(llmConfig) {
   };
 }
 
+export function stripThinkingBlocks(content) {
+  let cleaned = String(content || '').trim();
+  while (/^<think>[\s\S]*?<\/think>/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^<think>[\s\S]*?<\/think>\s*/i, '').trim();
+  }
+  return cleaned;
+}
+
+export function unwrapMarkdownCodeFence(content) {
+  const cleaned = String(content || '').trim();
+  const match = cleaned.match(/^```(?:\s*[\w+-]+)?\s*([\s\S]*?)\s*```$/);
+  return match ? match[1].trim() : cleaned;
+}
+
 export async function callOpenAICompatible({ messages, model, endpoint, apiKey }) {
   const finalEndpoint = normalizeChatEndpoint(endpoint || process.env.OPENPRISM_LLM_ENDPOINT);
   const finalApiKey = (apiKey || process.env.OPENPRISM_LLM_API_KEY || '').trim();
@@ -59,6 +73,6 @@ export async function callOpenAICompatible({ messages, model, endpoint, apiKey }
   } catch {
     return { ok: false, error: 'Response JSON parse failed.' };
   }
-  const content = data?.choices?.[0]?.message?.content || '';
+  const content = stripThinkingBlocks(data?.choices?.[0]?.message?.content || '');
   return { ok: true, content };
 }

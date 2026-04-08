@@ -18,22 +18,20 @@ import {
 } from '../api/client';
 import type { ProjectMeta, TemplateMeta, TemplateCategory } from '../api/client';
 import TransferPanel from './TransferPanel';
+import { EMPTY_LLM_SETTINGS, SETTINGS_KEY, normalizeLLMSettings } from './llmSettings';
 
 type ViewFilter = 'all' | 'mine' | 'archived' | 'trash';
 type SortBy = 'updatedAt' | 'name' | 'createdAt';
-
-const SETTINGS_KEY = 'openprism-settings-v1';
 
 interface LLMSettings {
   llmEndpoint: string;
   llmApiKey: string;
   llmModel: string;
+  llmConfigured: boolean;
 }
 
 const DEFAULT_LLM: LLMSettings = {
-  llmEndpoint: 'https://api.openai.com/v1/chat/completions',
-  llmApiKey: '',
-  llmModel: 'gpt-4o-mini',
+  ...EMPTY_LLM_SETTINGS,
 };
 
 function loadLLMSettings(): LLMSettings {
@@ -41,11 +39,7 @@ function loadLLMSettings(): LLMSettings {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_LLM;
     const parsed = JSON.parse(raw);
-    return {
-      llmEndpoint: parsed.llmEndpoint ?? DEFAULT_LLM.llmEndpoint,
-      llmApiKey: parsed.llmApiKey ?? DEFAULT_LLM.llmApiKey,
-      llmModel: parsed.llmModel ?? DEFAULT_LLM.llmModel,
-    };
+    return normalizeLLMSettings(parsed);
   } catch {
     return DEFAULT_LLM;
   }
@@ -55,7 +49,7 @@ function saveLLMSettings(s: LLMSettings) {
   try {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
     const prev = raw ? JSON.parse(raw) : {};
-    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...prev, ...s }));
+    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...prev, ...normalizeLLMSettings(s) }));
   } catch {}
 }
 

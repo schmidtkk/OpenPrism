@@ -1,4 +1,4 @@
-import { callOpenAICompatible } from '../services/llmService.js';
+import { callOpenAICompatible, unwrapMarkdownCodeFence } from '../services/llmService.js';
 import { runToolAgent } from '../services/agentService.js';
 import { getLang, t } from '../i18n/index.js';
 
@@ -100,7 +100,7 @@ export function registerAgentRoutes(fastify) {
     let reply = '';
     let suggestion = '';
     try {
-      const parsed = JSON.parse(result.content);
+      const parsed = JSON.parse(unwrapMarkdownCodeFence(result.content));
       reply = parsed.reply || '';
       suggestion = parsed.suggestion || '';
     } catch {

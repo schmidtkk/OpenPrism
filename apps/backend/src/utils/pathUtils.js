@@ -1,8 +1,9 @@
 import path from 'path';
 
 export function safeJoin(root, targetPath) {
-  const resolved = path.resolve(root, targetPath);
-  if (!resolved.startsWith(root + path.sep) && resolved !== root) {
+  const resolvedRoot = path.resolve(root);
+  const resolved = path.resolve(resolvedRoot, targetPath);
+  if (!resolved.startsWith(resolvedRoot + path.sep) && resolved !== resolvedRoot) {
     throw new Error('Invalid path');
   }
   return resolved;

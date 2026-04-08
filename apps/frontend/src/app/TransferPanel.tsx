@@ -14,6 +14,7 @@ import type {
   TemplateMeta,
   FileItem,
 } from '../api/client';
+import { SETTINGS_KEY, readStoredLLMSettings } from './llmSettings';
 
 interface TransferPanelProps {
   projectId: string;
@@ -42,17 +43,6 @@ export default function TransferPanel({ projectId, onJobUpdate }: TransferPanelP
   const [targetTemplateId, setTargetTemplateId] = useState('');
   const [engine, setEngine] = useState('pdflatex');
   const [layoutCheck, setLayoutCheck] = useState(false);
-
-  // LLM config — read from shared localStorage (set via ProjectPage / EditorPage settings)
-  const SETTINGS_KEY = 'openprism-settings-v1';
-  const readLLMFromStorage = (): { llmEndpoint: string; llmApiKey: string; llmModel: string } => {
-    try {
-      const raw = window.localStorage.getItem(SETTINGS_KEY);
-      if (!raw) return { llmEndpoint: '', llmApiKey: '', llmModel: '' };
-      const p = JSON.parse(raw);
-      return { llmEndpoint: p.llmEndpoint || '', llmApiKey: p.llmApiKey || '', llmModel: p.llmModel || '' };
-    } catch { return { llmEndpoint: '', llmApiKey: '', llmModel: '' }; }
-  };
 
   const readMineruConfigFromStorage = (): { mineruApiBase: string; mineruToken: string } => {
     try {
@@ -147,7 +137,7 @@ export default function TransferPanel({ projectId, onJobUpdate }: TransferPanelP
   const selectedTemplate = templates.find(tp => tp.id === targetTemplateId);
 
   const buildLlmConfig = (): Partial<LLMConfig> | undefined => {
-    const { llmEndpoint, llmApiKey, llmModel } = readLLMFromStorage();
+    const { llmEndpoint, llmApiKey, llmModel } = readStoredLLMSettings();
     if (!llmEndpoint && !llmApiKey && !llmModel) return undefined;
     return {
       ...(llmEndpoint ? { endpoint: llmEndpoint } : {}),
